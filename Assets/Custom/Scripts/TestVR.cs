@@ -38,9 +38,27 @@ public class TestVR : MonoBehaviour
 
     //public RenderTexture rt;
 
+    [Header("Classification")]
+    public ShapeClassifier classifier;
+
+    [Range(0f, 1f)]
+    [Tooltip("A recognised shape is only saved into its Resources folder if the classifier is at least this confident")]
+    public float saveConfidence = 0.8f;
+
+    [Tooltip("Write each drawing's three views into Assets/Custom/Resources/<label>/")]
+    public bool saveDrawings = true;
+
+    [Tooltip("Folder used when no classifier is assigned")]
+    public string unclassifiedFolder = "Unclassified";
+
+    //Raised after every drawing is classified (whether or not it was saved).
+    public event System.Action<ShapeClassifier.Result> ShapeClassified;
+
     GameObject trailObj;
     GameObject center;
     public static int count;
+    public static string lastSavedFolder;   //Resources sub-folder of the most recently saved drawing (used by RemoveAsset)
+    int pendingId;
 
 
     private void OnEnable() {
@@ -103,35 +121,57 @@ public class TestVR : MonoBehaviour
         RenderTexture.active = null;
     }
 
+    //Blit a camera view through the shader and read it back as a black/white texture.
+    private Texture2D RenderView(Texture source, RenderTexture dest) {
+        Graphics.Blit(source, dest, blitMat);
+        RenderTexture.active = dest;
+        Texture2D tex = new Texture2D(dest.width, dest.height, TextureFormat.R8, false);
+        tex.ReadPixels(new Rect(0, 0, dest.width, dest.height), 0, 0);
+        tex.Apply();
+        RenderTexture.active = null;
+        return tex;
+    }
+
     private void ReadFromMaterial() {
-        //Render out the Z
-        Graphics.Blit(In_RZ, Out_RZ, blitMat);
-        Texture2D tex = new Texture2D(Out_RZ.width, Out_RZ.height, TextureFormat.R8, false);
-        tex.ReadPixels(new Rect(0, 0, Out_RZ.width, Out_RZ.height), 0, 0);
-        tex.Apply();
-        byte[] bytes = ImageConversion.EncodeToPNG(tex);
-        Object.Destroy(tex);
-        System.IO.File.WriteAllBytes(Application.dataPath + "/Custom/Resources/Square/" + count + "_Z.png", bytes);
+        Texture2D texZ = RenderView(In_RZ, Out_RZ);
+        Texture2D texY = RenderView(In_RY, Out_RY);
+        Texture2D texX = RenderView(In_RX, Out_RX);
 
+        //Classify the drawing and pick the Resources folder to save it into.
+        string folder = null;
+        if (classifier != null) {
+            ShapeClassifier.Result result = classifier.Classify(texX, texY, texZ);
+            Debug.Log($"Drawing {pendingId}: {result.label} ({result.confidence:P0})");
 
-        //Render the Y
-        Graphics.Blit(In_RY, Out_RY, blitMat);
-        tex = new Texture2D(Out_RY.width, Out_RY.height, TextureFormat.R8, false);
-        tex.ReadPixels(new Rect(0, 0, Out_RY.width, Out_RY.height), 0, 0);
-        tex.Apply();
-        bytes = ImageConversion.EncodeToPNG(tex);
-        Object.Destroy(tex);
-        System.IO.File.WriteAllBytes(Application.dataPath + "/Custom/Resources/Square/" + count + "_Y.png", bytes);
+            if (result.IsOther)
+                folder = "Other";
+            else if (result.confidence >= saveConfidence)
+                folder = result.label;
+            else
+                Debug.Log($"Not saving drawing {pendingId}: {result.label} confidence {result.confidence:P0} is below saveConfidence {saveConfidence:P0}");
 
+            ShapeClassified?.Invoke(result);
+        } else {
+            Debug.LogWarning("TestVR: no ShapeClassifier assigned, saving drawing to Resources/" + unclassifiedFolder);
+            folder = unclassifiedFolder;
+        }
 
-        //Render the X
-        Graphics.Blit(In_RX, Out_RX, blitMat);
-        tex = new Texture2D(Out_RX.width, Out_RX.height, TextureFormat.R8, false);
-        tex.ReadPixels(new Rect(0, 0, Out_RX.width, Out_RX.height), 0, 0);
-        tex.Apply();
-        bytes = ImageConversion.EncodeToPNG(tex);
-        Object.Destroy(tex);
-        System.IO.File.WriteAllBytes(Application.dataPath + "/Custom/Resources/Square/" + count + "_X.png", bytes);
+        if (folder != null && saveDrawings) {
+            string dir = Application.dataPath + "/Custom/Resources/" + folder;
+            System.IO.Directory.CreateDirectory(dir);
+            System.IO.File.WriteAllBytes(dir + "/" + pendingId + "_Z.png", ImageConversion.EncodeToPNG(texZ));
+            System.IO.File.WriteAllBytes(dir + "/" + pendingId + "_Y.png", ImageConversion.EncodeToPNG(texY));
+            System.IO.File.WriteAllBytes(dir + "/" + pendingId + "_X.png", ImageConversion.EncodeToPNG(texX));
+
+            //Only advance the counter when something was written, so ids stay contiguous.
+            count = pendingId;
+            Save.SaveFile(count);
+            lastSavedFolder = folder;
+        }
+
+        Object.Destroy(texZ);
+        Object.Destroy(texY);
+        Object.Destroy(texX);
     }
 
     
@@ -237,9 +277,8 @@ public class TestVR : MonoBehaviour
         Invoke("ReadFromMaterial", 0.1f);
         Destroy(trend, 0.2f);
 
-        //This count is not being subtracted when delete calls it.
-        count +=1;
-        Save.SaveFile(count);
+        //The new drawing gets the next id; ReadFromMaterial commits it once the files are written.
+        pendingId = count + 1;
     }
     /*
     void Start()

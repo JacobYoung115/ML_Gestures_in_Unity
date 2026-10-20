@@ -71,6 +71,8 @@ up automatically — and retrain. That is the single most useful next step.
 
 ## Using it in Unity
 
+Step-by-step test instructions: [`Assets/Custom/ML/README.md`](../Assets/Custom/ML/README.md).
+
 1. Barracuda `3.0.0` is added to `Packages/manifest.json`; Unity installs it on open.
 2. Add `ShapeClassifier` to a GameObject. Assign `ShapeClassifierB.onnx` and the
    `Out_RX`, `Out_RY`, `Out_RZ` render textures.

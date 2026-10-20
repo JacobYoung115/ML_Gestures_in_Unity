@@ -29,10 +29,24 @@ public class RemoveAsset : MonoBehaviour
 
         Debug.Log("Attempting to delete image(s): " + TestVR.count);
 
+        //Drawings are now sorted into folders by the classifier, so find the one holding this id.
+        string folder = null;
+        string[] candidates = { TestVR.lastSavedFolder, "Circle", "Square", "Triangle", "Other", "Unclassified" };
+        foreach (string c in candidates) {
+            if (c != null && System.IO.File.Exists("Assets/Custom/Resources/" + c + "/" + TestVR.count + "_X.png")) {
+                folder = c;
+                break;
+            }
+        }
+        if (folder == null) {
+            Debug.Log("No saved drawing found with id " + TestVR.count);
+            return;
+        }
+
         string[] paths = new string[3];
-        paths[0] = "Assets/Custom/Resources/Square/" + TestVR.count + "_X.png";
-        paths[1] = "Assets/Custom/Resources/Square/" + TestVR.count + "_Y.png";
-        paths[2] = "Assets/Custom/Resources/Square/" + TestVR.count + "_Z.png";
+        paths[0] = "Assets/Custom/Resources/" + folder + "/" + TestVR.count + "_X.png";
+        paths[1] = "Assets/Custom/Resources/" + folder + "/" + TestVR.count + "_Y.png";
+        paths[2] = "Assets/Custom/Resources/" + folder + "/" + TestVR.count + "_Z.png";
 
         List<string> outFailedPaths = new List<string>();
 
