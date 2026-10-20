@@ -156,6 +156,84 @@ MonoBehaviour:
   drawCam_Y: {fileID: 2111809965}
   drawCam_X: {fileID: 1709263594}
   VRCam: {fileID: 860656511}
+  classifier: {fileID: 612980699}
+  saveConfidence: 0.8
+  saveDrawings: 1
+  unclassifiedFolder: Unclassified
+--- !u!114 &100350283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100350273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a315910529325242bf96ca3be0d9eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  drawer: {fileID: 0}
+  hand: {fileID: 0}
+  diameter: 0.08
+  mass: 0.2
+  spawnOffset: 0.12
+  launchSpeed: 0.5
+  lifetime: 10
+  sphereMaterial: {fileID: 2100000, guid: 5d47a60aabb555f4686f0e558b5b90f1, type: 2}
+  circleColor: {r: 0, g: 0, b: 1, a: 1}
+  squareColor: {r: 0, g: 1, b: 0, a: 1}
+  triangleColor: {r: 1, g: 0, b: 0, a: 1}
+  otherColor: {r: 0, g: 0, b: 0, a: 1}
+--- !u!1 &612980698
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 612980700}
+  - component: {fileID: 612980699}
+  m_Layer: 0
+  m_Name: ShapeClassifier
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &612980699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612980698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 763a317c8b14b1c4cb2fbc66d987281d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  modelAsset: {fileID: 5022602860645237092, guid: a082b33802e6ed842bace61ca8e6189d, type: 3}
+  viewX: {fileID: 8600000, guid: acaafdb9efa018546a620eb0ec1f6bf6, type: 2}
+  viewY: {fileID: 8600000, guid: c919a5244807d7e45981e6eb2d71fff7, type: 2}
+  viewZ: {fileID: 8600000, guid: f41a86cfa3439dd4a95f74f659d2bfff, type: 2}
+  confidenceThreshold: 0.5
+  workerType: 512
+--- !u!4 &612980700
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612980698}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &710869528
 GameObject:
   m_ObjectHideFlags: 0
