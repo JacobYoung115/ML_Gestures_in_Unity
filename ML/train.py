@@ -63,6 +63,31 @@ def summarize(probs, labels, families=None, threshold=0.0):
     return res
 
 
+def make_barracuda_compatible(m):
+    """Barracuda requires Conv/Gemm weights to be initializers. When a module is reused (model B's
+    shared encoder), torch routes the repeated weights through Identity nodes; point the consumers
+    straight at the initializers instead, and turn Constant nodes into initializers."""
+    from onnx import numpy_helper
+    g = m.graph
+    inits = {i.name for i in g.initializer}
+    for n in [n for n in g.node if n.op_type == 'Constant']:
+        t = next(a.t for a in n.attribute if a.name == 'value')
+        g.initializer.append(numpy_helper.from_array(numpy_helper.to_array(t), n.output[0]))
+        inits.add(n.output[0])
+        g.node.remove(n)
+    alias = {n.output[0]: n.input[0] for n in g.node if n.op_type == 'Identity' and n.input[0] in inits}
+    for n in [n for n in g.node if n.op_type == 'Identity' and n.output[0] in alias]:
+        g.node.remove(n)
+    for n in g.node:
+        for k, name in enumerate(n.input):
+            if name in alias:
+                n.input[k] = alias[name]
+    bad = [n.name for n in g.node if n.op_type in ('Conv', 'Gemm') and any(i not in inits for i in n.input[1:])]
+    if bad:
+        raise RuntimeError(f'Barracuda needs constant weights; non-constant in: {bad}')
+    return m
+
+
 def export_onnx(model, path):
     model = model.cpu().eval()
     model.softmax = True
@@ -73,7 +98,9 @@ def export_onnx(model, path):
     # verify with onnxruntime and list ops for Barracuda compatibility
     import onnx
     import onnxruntime as ort
-    m = onnx.load(path)
+    m = make_barracuda_compatible(onnx.load(path))
+    onnx.checker.check_model(m)
+    onnx.save(m, path)
     ops = sorted({n.op_type for n in m.graph.node})
     sess = ort.InferenceSession(path, providers=['CPUExecutionProvider'])
     x = [(torch.rand(1, 1, 128, 128) > 0.95).float() for _ in range(3)]
