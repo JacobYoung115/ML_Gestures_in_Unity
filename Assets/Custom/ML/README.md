@@ -43,7 +43,7 @@ This confirms the model gives the same numbers in Unity as in Python.
 5. Press Play (SteamVR errors without a headset are fine here). The Console should show:
 
    ```
-   [ShapeClassifierSelfTest] ShapeClassifierB: 30/30 correct, max |prob diff| vs Python = 0.0000xx -> MATCHES Python. ...
+   [ShapeClassifierSelfTest] ShapeClassifierB: 29/30 correct, max |prob diff| vs Python = 0.0000xx -> MATCHES Python. ...
    ```
 
    * **DIFFERS from Python**: the input orientation or format is wrong. Copy the log line
